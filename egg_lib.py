@@ -69,14 +69,14 @@ def extract_indicator_value(indicator_id, soup):
 
 # Функция для преобразования значений
 def parse_value(value, value_type="currency"):
-    if not value or "-" in value:
+    if not value or "-" in value or '—' in value:
         return None
     if value_type == "currency":
         return int(value.replace("\xa0", "").replace("₽", "").strip())
     elif value_type == "percent":
-        return float(value.replace("%", "").replace(",", ".").strip())
+        return float(value.replace("\xa0", "").replace("%", "").replace(",", ".").strip())
     elif value_type == "integer":
-        return int(value.strip())
+        return int(value.replace("\xa0", "").strip())
     return value
 
 
@@ -130,7 +130,7 @@ def start_parsing(save_path, source_path, reverse_flag, start_with=0):
     months_iterator = tuple(iterate_months(start_date, end_date))
     df = pd.DataFrame()
 
-    ogrn_codes = pd.read_csv(source_path)["ОГРН"].sort_values(ascending=reverse_flag)[start_with:]
+    ogrn_codes = pd.read_csv(source_path)["OGRN"].sort_values(ascending=reverse_flag)[start_with:]
     skipped_ogrn = []
 
     is_ever_ok = True
@@ -138,6 +138,7 @@ def start_parsing(save_path, source_path, reverse_flag, start_with=0):
     for i, ogrn in tqdm(enumerate(ogrn_codes, start=start_with), total=len(skipped_ogrn)):
         try:
             try:
+                ogrn = int(ogrn)
                 driver.refresh()
                 WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, search_button_selector))
@@ -195,31 +196,31 @@ def start_parsing(save_path, source_path, reverse_flag, start_with=0):
                         "ОГРН": int(ogrn),
                         "Последний день": end_date_i.strftime("%Y-%m-%d"),
                         "Выручка по заказам FBO за 30 дней, руб": parse_value(
-                            extract_indicator_value("js-indicator-ordersPeriodSum"),
+                            extract_indicator_value("js-indicator-ordersPeriodSum", soup),
                             "currency",
                         ),
                         "Потери FBO за 30 дней, руб": parse_value(
-                            extract_indicator_value("js-indicator-loosesPeriodSum"),
+                            extract_indicator_value("js-indicator-loosesPeriodSum", soup),
                             "currency",
                         ),
                         "Потери FBO к выручке за 30 дней, %": parse_value(
-                            extract_indicator_value("js-indicator-loosesPeriodPercent"),
+                            extract_indicator_value("js-indicator-loosesPeriodPercent", soup),
                             "percent",
                         ),
                         "Товаров на последний день, шт": parse_value(
-                            extract_indicator_value("js-indicator-totalProducts"),
+                            extract_indicator_value("js-indicator-totalProducts", soup),
                             "integer",
                         ),
                         "Продаётся за 30 дней, %": parse_value(
-                            extract_indicator_value("js-indicator-orderedCardsCountPercent"),
+                            extract_indicator_value("js-indicator-orderedCardsCountPercent", soup),
                             "percent",
                         ),
                         "80% выручки за 30 дней, %": parse_value(
-                            extract_indicator_value("js-indicator-groupAOrderedCardsCountPercent"),
+                            extract_indicator_value("js-indicator-groupAOrderedCardsCountPercent", soup),
                             "percent",
                         ),
                         "Средний чек товаров категории А за 30 дней, руб": parse_value(
-                            extract_indicator_value("js-indicator-groupAAvgOrderSum"),
+                            extract_indicator_value("js-indicator-groupAAvgOrderSum", soup),
                             "currency",
                         ),
                     }
@@ -243,6 +244,10 @@ def start_parsing(save_path, source_path, reverse_flag, start_with=0):
                 raise  # Перебрасываем исключение во внешний блок
 
         except Exception:
+            df.to_csv(f"{save_path}/sel_data_{i}{'_rev' if reverse_flag else ''}")
+            with open(f"{save_path}/skipped_ogrn_{i}.json", "w+") as f:
+                json.dump(skipped_ogrn, f)
+            df = pd.DataFrame()
             logger.error("Critical error occurred, reinitializing driver")
             try:
                 driver.save_screenshot("exception_screen.png")

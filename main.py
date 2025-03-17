@@ -3,7 +3,7 @@ import argparse
 from egg_lib import start_parsing
 
 if __name__ == "__main__":
-    """Example: nohup python -u wb2.py "inn_first.json" "inn_result.json" > log1.txt 2>&1 &"""
+    """Example: nohup python -u main.py "data/" "data/sellers_ogrn.csv" 0 > log1.txt 2>&1 &"""
     parser = argparse.ArgumentParser()
     parser.add_argument("save_path", type=str, help="Путь до файла для сохранения")
     parser.add_argument("source_path", type=str, help="Путь до исходных данных")
