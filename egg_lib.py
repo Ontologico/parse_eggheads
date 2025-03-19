@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 
 import pandas as pd
 import requests
+import traceback
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from loguru import logger
@@ -28,6 +29,9 @@ from conf import (
     search_el_class,
     start_date,
     start_date_selector,
+    card_info_class_name,
+    adv_window_class_name,
+    adv_window_id
 )
 
 load_dotenv(override=True)
@@ -143,9 +147,18 @@ def start_parsing(save_path, source_path, reverse_flag, start_with=0):
                 WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, search_button_selector))
                 )
+
                 search_button = driver.find_element(by=By.CSS_SELECTOR, value=search_button_selector)
                 search_button.click()
+                search_button.click()
+
+                
                 input_search = driver.find_element(by=By.ID, value=input_search_id)
+                driver.execute_script("arguments[0].scrollIntoView();", input_search)
+
+                # wait = WebDriverWait(driver, 10)
+                # input_search = wait.until(EC.visibility_of_element_located((By.ID, "js-e-search-input")))
+
                 input_search.clear()
                 input_search.send_keys(ogrn)
                 try:
@@ -157,11 +170,17 @@ def start_parsing(save_path, source_path, reverse_flag, start_with=0):
                 input_search.send_keys(Keys.RETURN)
                 driver.switch_to.window(driver.window_handles[-1])
 
+                          
                 WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, calendar_button_selector))
                 )
                 calendar_button = driver.find_element(by=By.CSS_SELECTOR, value=calendar_button_selector)
 
+                # Убираю окно, которое перекрывает кнопку:
+                overlay = driver.find_element(By.ID, adv_window_id)
+                if overlay.is_displayed():
+                    driver.execute_script("arguments[0].style.display = 'none';", overlay)
+                
                 for start_date_i, end_date_i in months_iterator:
                     # Небольшой цикл, который нужен для открытия календаря
                     while True:
@@ -179,14 +198,15 @@ def start_parsing(save_path, source_path, reverse_flag, start_with=0):
                     end_date_input.clear()
                     end_date_input.send_keys(end_date_i.strftime("%Y-%m-%d"))
 
-                    # Убираю окно, которое перекрывает кнопку:
-                    overlay = driver.find_element(By.CSS_SELECTOR, adv_window_selector)
-                    if overlay.is_displayed():
-                        driver.execute_script("arguments[0].style.display = 'none';", overlay)
 
                     accept_date_button = driver.find_element(by=By.CSS_SELECTOR, value=accept_date_button_selector)
                     accept_date_button.click()
                     soup = BeautifulSoup(driver.page_source, "html.parser")
+
+                    # Жду появления информации на карточках:
+                    WebDriverWait(driver, 10).until(
+                        EC.presence_of_element_located((By.CLASS_NAME, card_info_class_name))
+                    )
 
                     profit = extract_indicator_value("js-indicator-ordersPeriodSum", soup)
                     if profit is None:
@@ -228,7 +248,7 @@ def start_parsing(save_path, source_path, reverse_flag, start_with=0):
                     new_df = pd.DataFrame(data, index=[0])
                     df = pd.concat([df, new_df])
 
-                if i % 100 == 0:
+                if i % 10 == 0:
                     df.to_csv(f"{save_path}/sel_data_{i}{'_rev' if reverse_flag else ''}")
                     with open("skipped_ogrn.json", "w+") as f:
                         json.dump(skipped_ogrn, f)
@@ -241,6 +261,7 @@ def start_parsing(save_path, source_path, reverse_flag, start_with=0):
 
             except Exception as err:
                 logger.error(f"Error processing OGRN {ogrn}: {str(err)}")
+                traceback.print_exc()
                 raise  # Перебрасываем исключение во внешний блок
 
         except Exception:
