@@ -31,7 +31,8 @@ from conf import (
     start_date_selector,
     card_info_class_name,
     adv_window_class_name,
-    adv_window_id
+    adv_window_id,
+    save_every_n_companies
 )
 
 load_dotenv(override=True)
@@ -253,7 +254,7 @@ def start_parsing(save_path, source_path, reverse_flag, start_with=0):
                     df = pd.concat([df, new_df], ignore_index=True)
 
                 total_records += 1
-                if total_records % 3 == 0:
+                if total_records % save_every_n_companies == 0:
                     df.to_csv(f"{save_path}/sel_data_{i}{'_rev' if reverse_flag else ''}")
                     with open(f"{save_path}/skipped_ogrn_{i}.json", "w+") as f:
                         json.dump(skipped_ogrn, f)
