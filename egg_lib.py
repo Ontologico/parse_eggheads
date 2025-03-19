@@ -138,6 +138,7 @@ def start_parsing(save_path, source_path, reverse_flag, start_with=0):
     skipped_ogrn = []
 
     is_ever_ok = True
+    total_records = 0
 
     for i, ogrn in tqdm(enumerate(ogrn_codes, start=start_with), total=len(skipped_ogrn)):
         try:
@@ -201,16 +202,18 @@ def start_parsing(save_path, source_path, reverse_flag, start_with=0):
 
                     accept_date_button = driver.find_element(by=By.CSS_SELECTOR, value=accept_date_button_selector)
                     accept_date_button.click()
-                    soup = BeautifulSoup(driver.page_source, "html.parser")
-
                     # Жду появления информации на карточках:
                     WebDriverWait(driver, 10).until(
                         EC.presence_of_element_located((By.CLASS_NAME, card_info_class_name))
                     )
 
-                    profit = extract_indicator_value("js-indicator-ordersPeriodSum", soup)
-                    if profit is None:
-                        continue
+                    soup = BeautifulSoup(driver.page_source, "html.parser")
+
+
+
+                    # profit = extract_indicator_value("js-indicator-ordersPeriodSum", soup)
+                    # if profit is None:
+                    #     continue
 
                     data = {
                         "ОГРН": int(ogrn),
@@ -246,11 +249,13 @@ def start_parsing(save_path, source_path, reverse_flag, start_with=0):
                     }
 
                     new_df = pd.DataFrame(data, index=[0])
-                    df = pd.concat([df, new_df])
+                    print(new_df.iloc[:, :3])
+                    df = pd.concat([df, new_df], ignore_index=True)
 
-                if i % 10 == 0:
+                total_records += 1
+                if total_records % 3 == 0:
                     df.to_csv(f"{save_path}/sel_data_{i}{'_rev' if reverse_flag else ''}")
-                    with open("skipped_ogrn.json", "w+") as f:
+                    with open(f"{save_path}/skipped_ogrn_{i}.json", "w+") as f:
                         json.dump(skipped_ogrn, f)
                     df = pd.DataFrame()
 

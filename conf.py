@@ -29,7 +29,7 @@ driver_options.add_argument("--window-size=1920,1080")
 
 
 # Другие настройки:
-start_date = "2020-01"
+start_date = "2025-01"
 end_date = "2025-03"
 
 ogrn_codes = ["323665800152860"]
