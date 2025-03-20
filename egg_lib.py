@@ -1,11 +1,11 @@
 import json
 import os
 import time
+import traceback
 from datetime import datetime, timedelta
 
 import pandas as pd
 import requests
-import traceback
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from loguru import logger
@@ -19,20 +19,18 @@ from tqdm import tqdm
 
 from conf import (
     accept_date_button_selector,
-    adv_window_selector,
+    adv_window_id,
     calendar_button_selector,
+    card_info_class_name,
     driver_options,
     end_date,
     end_date_selector,
     input_search_id,
+    save_every_n_companies,
     search_button_selector,
     search_el_class,
     start_date,
     start_date_selector,
-    card_info_class_name,
-    adv_window_class_name,
-    adv_window_id,
-    save_every_n_companies
 )
 
 load_dotenv(override=True)
@@ -74,7 +72,7 @@ def extract_indicator_value(indicator_id, soup):
 
 # Функция для преобразования значений
 def parse_value(value, value_type="currency"):
-    if not value or "-" in value or '—' in value:
+    if not value or "-" in value or "—" in value:
         return None
     if value_type == "currency":
         return int(value.replace("\xa0", "").replace("₽", "").strip())
@@ -154,7 +152,6 @@ def start_parsing(save_path, source_path, reverse_flag, start_with=0):
                 search_button.click()
                 search_button.click()
 
-                
                 input_search = driver.find_element(by=By.ID, value=input_search_id)
                 driver.execute_script("arguments[0].scrollIntoView();", input_search)
 
@@ -172,7 +169,6 @@ def start_parsing(save_path, source_path, reverse_flag, start_with=0):
                 input_search.send_keys(Keys.RETURN)
                 driver.switch_to.window(driver.window_handles[-1])
 
-                          
                 WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, calendar_button_selector))
                 )
@@ -182,7 +178,7 @@ def start_parsing(save_path, source_path, reverse_flag, start_with=0):
                 overlay = driver.find_element(By.ID, adv_window_id)
                 if overlay.is_displayed():
                     driver.execute_script("arguments[0].style.display = 'none';", overlay)
-                
+
                 for start_date_i, end_date_i in months_iterator:
                     # Небольшой цикл, который нужен для открытия календаря
                     while True:
@@ -200,7 +196,6 @@ def start_parsing(save_path, source_path, reverse_flag, start_with=0):
                     end_date_input.clear()
                     end_date_input.send_keys(end_date_i.strftime("%Y-%m-%d"))
 
-
                     accept_date_button = driver.find_element(by=By.CSS_SELECTOR, value=accept_date_button_selector)
                     accept_date_button.click()
                     # Жду появления информации на карточках:
@@ -209,8 +204,6 @@ def start_parsing(save_path, source_path, reverse_flag, start_with=0):
                     )
 
                     soup = BeautifulSoup(driver.page_source, "html.parser")
-
-
 
                     # profit = extract_indicator_value("js-indicator-ordersPeriodSum", soup)
                     # if profit is None:

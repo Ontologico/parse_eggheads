@@ -12,7 +12,6 @@ wheels/
 .DS_Store
 .env
 
-parse_data/
-parse_data_final.csv
-exception_screen.png
+data/
 *.txt
+*.png

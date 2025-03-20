@@ -1,9 +1,7 @@
 from selenium.webdriver.firefox.options import Options as FirefoxOptions
 
 # Пути на веб-элементы:
-search_button_selector = (
-    """#__nuxt > div > div.o-main-nav > nav > div > div.nav-right.ms-auto > div.o-navbar-search"""
-)
+search_button_selector = """#__nuxt > div > div.o-main-nav > nav > div > div.nav-right.ms-auto > div.o-navbar-search"""
 input_search_selector = (
     """#__nuxt > div > div.o-main-nav > nav > div > div.nav-right.ms-auto > div.o-navbar-search > div > div"""
 )
@@ -21,9 +19,9 @@ adv_window_id = "teleports"
 adv_window_class_name = "feather feather-x toast-close flex-shrink-0"
 
 # Настройки драйвера:
-firefox_binary_path = '/Users/aleksssokol3/.cache/selenium/firefox/mac-arm64/136.0/Firefox.app/Contents/MacOS/firefox'
+# firefox_binary_path = '/Users/aleksssokol3/.cache/selenium/firefox/mac-arm64/136.0/Firefox.app/Contents/MacOS/firefox'
 driver_options = FirefoxOptions()
-driver_options.binary_location = firefox_binary_path
+# driver_options.binary_location = firefox_binary_path
 driver_options.add_argument("--headless")
 driver_options.add_argument("--window-size=1920,1080")
 
