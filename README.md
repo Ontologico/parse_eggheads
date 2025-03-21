@@ -11,4 +11,10 @@ source activete eggheads
 conda install geckodriver
 conda install conda-forge::firefox
 ```
+### Запуск кода
 
+```bash
+nohup python -u main.py "data/" "data/sellers_ogrn.csv" 0 > log1.txt 2>&1 &
+```
+
+[1] 788366

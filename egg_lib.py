@@ -243,7 +243,6 @@ def start_parsing(save_path, source_path, reverse_flag, start_with=0):
                     }
 
                     new_df = pd.DataFrame(data, index=[0])
-                    print(new_df.iloc[:, :3])
                     df = pd.concat([df, new_df], ignore_index=True)
 
                 total_records += 1
